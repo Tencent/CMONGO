@@ -1,0 +1,188 @@
+/**
+ *    Copyright (C) 2017 MongoDB Inc.
+ *
+ *    This program is free software: you can redistribute it and/or  modify
+ *    it under the terms of the GNU Affero General Public License, version 3,
+ *    as published by the Free Software Foundation.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU Affero General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Affero General Public License
+ *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *    As a special exception, the copyright holders give permission to link the
+ *    code of portions of this program with the OpenSSL library under certain
+ *    conditions as described in each individual source file and distribute
+ *    linked combinations including the program with the OpenSSL library. You
+ *    must comply with the GNU Affero General Public License in all respects for
+ *    all of the code used other than as permitted herein. If you modify file(s)
+ *    with this exception, you may extend this exception to your version of the
+ *    file(s), but you are not obligated to do so. If you do not wish to do so,
+ *    delete this exception statement from your version. If you delete this
+ *    exception statement from all source files in the program, then also delete
+ *    it in the license file.
+ */
+
+#pragma once
+
+#include "mongo/base/string_data.h"
+#include "mongo/db/catalog/collection.h"
+#include "mongo/db/catalog/database.h"
+#include "mongo/db/concurrency/d_concurrency.h"
+#include "mongo/db/namespace_string.h"
+#include "mongo/db/operation_context.h"
+#include "mongo/db/views/view.h"
+
+namespace mongo {
+
+/**
+ * RAII-style class, which acquires a lock on the specified database in the requested mode and
+ * obtains a reference to the database. Used as a shortcut for calls to dbHolder().get().
+ *
+ * Use this when you want to do a database-level operation, like read a list of all collections, or
+ * drop a collection.
+ *
+ * It is guaranteed that the lock will be released when this object goes out of scope, therefore
+ * the database reference returned by this class should not be retained.
+ */
+class AutoGetDb {
+    MONGO_DISALLOW_COPYING(AutoGetDb);
+
+public:
+    AutoGetDb(OperationContext* opCtx,
+              StringData dbName,
+              LockMode mode,
+              Date_t deadline = Date_t::max());
+
+    /**
+     * Returns nullptr if the database didn't exist.
+     */
+    Database* getDb() const {
+        return _db;
+    }
+
+private:
+    const Lock::DBLock _dbLock;
+    Database* const _db;
+};
+
+/**
+ * RAII-style class, which acquires a locks on the specified database and collection in the
+ * requested modes and obtains references to both.
+ *
+ * NOTE: Throws NamespaceNotFound if the collection UUID cannot be resolved to a name.
+ *
+ * Any acquired locks may be released when this object goes out of scope, therefore the database
+ * and the collection references returned by this class should not be retained.
+ */
+class AutoGetCollection {
+    MONGO_DISALLOW_COPYING(AutoGetCollection);
+
+public:
+    enum ViewMode { kViewsPermitted, kViewsForbidden };
+
+    AutoGetCollection(OperationContext* opCtx,
+                      const NamespaceStringOrUUID& nsOrUUID,
+                      LockMode modeAll,
+                      ViewMode viewMode = kViewsForbidden,
+                      Date_t deadline = Date_t::max())
+        : AutoGetCollection(opCtx, nsOrUUID, modeAll, modeAll, viewMode, deadline) {}
+
+    AutoGetCollection(OperationContext* opCtx,
+                      const NamespaceStringOrUUID& nsOrUUID,
+                      LockMode modeDB,
+                      LockMode modeColl,
+                      ViewMode viewMode = kViewsForbidden,
+                      Date_t deadline = Date_t::max());
+
+    /**
+     * Without acquiring any locks resolves the given NamespaceStringOrUUID to an actual namespace.
+     * Throws NamespaceNotFound if the collection UUID cannot be resolved to a name.
+     */
+    static NamespaceString resolveNamespaceStringOrUUID(OperationContext* opCtx,
+                                                        NamespaceStringOrUUID nsOrUUID);
+
+    /**
+     * Returns nullptr if the database didn't exist.
+     */
+    Database* getDb() const {
+        return _autoDb.getDb();
+    }
+
+    /**
+     * Returns nullptr if the collection didn't exist.
+     */
+    Collection* getCollection() const {
+        return _coll;
+    }
+
+    /**
+     * Returns nullptr if the view didn't exist.
+     */
+    ViewDefinition* getView() const {
+        return _view.get();
+    }
+
+    /**
+     * Returns the resolved namespace of the collection or view.
+     */
+    const NamespaceString& getNss() const {
+        return _resolvedNss;
+    }
+
+private:
+    // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
+    // the same as the input namespace string
+    NamespaceString _resolvedNss;
+
+    AutoGetDb _autoDb;
+
+    // This field is boost::optional, because in the case of lookup by UUID, the collection lock
+    // might need to be relocked for the correct namespace
+    boost::optional<Lock::CollectionLock> _collLock;
+
+    Collection* _coll = nullptr;
+    std::shared_ptr<ViewDefinition> _view;
+};
+
+/**
+ * RAII-style class, which acquires a lock on the specified database in the requested mode and
+ * obtains a reference to the database, creating it was non-existing. Used as a shortcut for
+ * calls to dbHolder().openDb(), taking care of locking details. The requested mode must be
+ * MODE_IX or MODE_X. If the database needs to be created, the lock will automatically be
+ * reacquired as MODE_X.
+ *
+ * Use this when you are about to perform a write, and want to create the database if it doesn't
+ * already exist.
+ *
+ * It is guaranteed that locks will be released when this object goes out of scope, therefore
+ * the database reference returned by this class should not be retained.
+ */
+class AutoGetOrCreateDb {
+    MONGO_DISALLOW_COPYING(AutoGetOrCreateDb);
+
+public:
+    AutoGetOrCreateDb(OperationContext* opCtx,
+                      StringData dbName,
+                      LockMode mode,
+                      Date_t deadline = Date_t::max());
+
+    Database* getDb() const {
+        return _db;
+    }
+
+    bool justCreated() const {
+        return _justCreated;
+    }
+
+private:
+    boost::optional<AutoGetDb> _autoDb;
+
+    Database* _db;
+    bool _justCreated{false};
+};
+
+}  // namespace mongo

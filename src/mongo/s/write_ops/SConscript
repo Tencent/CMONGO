@@ -1,0 +1,87 @@
+# -*- mode: python -*-
+
+Import("env")
+
+env = env.Clone()
+
+env.Library(
+    target='batch_write_types',
+    source=[
+        'batched_command_request.cpp',
+        'batched_command_response.cpp',
+        'batched_upsert_detail.cpp',
+        'write_error_detail.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/db/common',
+        '$BUILD_DIR/mongo/db/ops/write_ops_parsers',
+        '$BUILD_DIR/mongo/db/repl/optime',
+        '$BUILD_DIR/mongo/db/commands',
+        '$BUILD_DIR/mongo/s/common_s',
+    ],
+)
+
+env.Library(
+    target='cluster_write_op',
+    source=[
+        'batch_write_exec.cpp',
+        'batch_write_op.cpp',
+        'chunk_manager_targeter.cpp',
+        'write_op.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/client/connection_string',
+        '$BUILD_DIR/mongo/s/async_requests_sender',
+        '$BUILD_DIR/mongo/s/client/sharding_client',
+        '$BUILD_DIR/mongo/s/commands/shared_cluster_commands',
+        '$BUILD_DIR/mongo/s/coreshard',
+        'batch_write_types',
+    ],
+)
+
+env.Library(
+    target='cluster_write_op_conversion',
+    source=[
+        'batch_downconvert.cpp',
+    ],
+    LIBDEPS=[
+        'batch_write_types',
+    ],
+)
+
+env.CppUnitTest(
+    target='batch_write_types_test',
+    source=[
+        'batched_command_request_test.cpp',
+        'batched_command_response_test.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/db/ops/write_ops_parsers_test_helpers',
+        'batch_write_types',
+    ]
+)
+
+env.CppUnitTest(
+    target='cluster_write_op_test',
+    source=[
+        'batch_write_exec_test.cpp',
+        'batch_write_op_test.cpp',
+        'write_op_test.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/db/service_context',
+        '$BUILD_DIR/mongo/s/sharding_test_fixture',
+        'cluster_write_op',
+    ]
+)
+
+env.CppUnitTest(
+    target='cluster_write_op_conversion_test',
+    source=[
+        'batch_downconvert_test.cpp',
+    ],
+    LIBDEPS=[
+        'cluster_write_op_conversion',
+    ]
+)
