@@ -1,0 +1,60 @@
+# -*- mode: python -*-
+
+Import("env")
+
+env.Library(
+    target='sharding_client',
+    source=[
+        'dbclient_multi_command.cpp',
+        'shard.cpp',
+        'shard_connection.cpp',
+        'shard_registry.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/client/clientdriver',
+        '$BUILD_DIR/mongo/client/fetcher',
+        '$BUILD_DIR/mongo/client/remote_command_runner_impl',
+        '$BUILD_DIR/mongo/client/remote_command_targeter',
+        '$BUILD_DIR/mongo/executor/connection_pool_stats',
+        '$BUILD_DIR/mongo/rpc/metadata',
+    ],
+    LIBDEPS_TAGS=[
+        # Circular with both coreshard and coredb! Also relies on some
+        # symbols like usingAShardConnection that are not uniquely
+        # defined.
+        'incomplete',
+    ],
+)
+
+env.Library(
+    target='sharding_connection_hook',
+    source=[
+        'multi_host_query.cpp',
+        'scc_fast_query_handler.cpp',
+        'sharding_connection_hook.cpp',
+        'sharding_network_connection_hook.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/client/clientdriver',
+        '$BUILD_DIR/mongo/s/coreshard',
+    ],
+    LIBDEPS_TAGS=[
+        # Depends on saveGLEStats, which is not uniquely defined
+        'incomplete',
+    ],
+)
+
+env.CppUnitTest(
+    target='sharding_client_test',
+    source=[
+        'shard_connection_test.cpp',
+    ],
+    LIBDEPS=[
+        'sharding_client',
+        'sharding_connection_hook',
+        '$BUILD_DIR/mongo/s/coreshard',
+        '$BUILD_DIR/mongo/db/auth/authorization_manager_mock_init',
+        '$BUILD_DIR/mongo/dbtests/mocklib',
+        '$BUILD_DIR/mongo/s/mongoscore',
+    ]
+)

@@ -1,0 +1,56 @@
+# -*- mode: python -*-
+
+Import("env")
+
+env.Library(
+    target='timer_stats',
+    source=[
+        'timer_stats.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/util/foundation',
+        '$BUILD_DIR/mongo/util/concurrency/spin_lock',
+    ],
+)
+
+env.CppUnitTest(
+    target='timer_stats_test',
+    source=[
+        'timer_stats_test.cpp',
+    ],
+    LIBDEPS=[
+        'timer_stats',
+    ],
+)
+
+env.Library(
+    target='top',
+    source=[
+        'top.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/db/service_context',
+    ],
+)
+
+env.CppUnitTest(
+    target='top_test',
+    source=[
+        'top_test.cpp',
+    ],
+    LIBDEPS=[
+        'top',
+    ],
+)
+
+env.Library(
+    target='counters',
+    source=[
+        'counters.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/util/concurrency/spin_lock',
+    ],
+)
