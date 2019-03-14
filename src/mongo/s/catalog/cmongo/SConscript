@@ -1,0 +1,28 @@
+# -*- mode: python -*-
+
+Import("env")
+
+# TODO: config upgrade tests are currently in dbtests
+env.Library(
+    target='catalog_manager_cmongo',
+    source=[
+        'catalog_manager_cmongo.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/s/catalog/catalog_manager',
+        '$BUILD_DIR/mongo/grpc/grpcclient',
+    ],
+)
+
+env.CppUnitTest(
+	target="catalog_manager_cmongo_test",
+	source=[
+		"catalog_manager_cmongo_test.cpp",
+	],
+	LIBDEPS=[
+        '$BUILD_DIR/mongo/s/mongoscore',
+        '$BUILD_DIR/mongo/s/coreshard',
+        '$BUILD_DIR/mongo/s/catalog/cmongo/catalog_manager_cmongo',
+        "$BUILD_DIR/mongo/db/auth/authorization_manager_mock_init",
+	],
+)

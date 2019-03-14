@@ -1,0 +1,203 @@
+# -*- mode: python -*-
+
+Import("env")
+
+env.Library(
+    target=[
+        'command_status',
+    ],
+    source=[
+        'get_status_from_command_result.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/util/foundation'
+    ],
+)
+
+env.Library(
+    target=[
+        'document_range',
+    ],
+    source=[
+        'document_range.cpp'
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+    ],
+    LIBDEPS_TAGS=[
+        # Depends on validation in a strange way right now
+        'incomplete'
+    ],
+)
+
+env.Library(
+    target=[
+        'protocol',
+    ],
+    source=[
+        'protocol.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/bson/util/bson_extract',
+    ],
+)
+
+env.Library(
+    target=[
+        'rpc',
+    ],
+    source=[
+        'factory.cpp',
+        'object_check.cpp',
+    ],
+    LIBDEPS=[
+        'command_reply',
+        'command_request',
+        'legacy_reply',
+        'legacy_request',
+        'metadata',
+        'protocol',
+        '$BUILD_DIR/mongo/db/server_parameters',
+        '$BUILD_DIR/mongo/db/dbmessage',
+    ],
+)
+
+env.Library(
+    target=[
+        'command_request',
+    ],
+    source=[
+        'command_request.cpp',
+        'command_request_builder.cpp',
+    ],
+    LIBDEPS=[
+        'document_range',
+        '$BUILD_DIR/mongo/util/net/network',
+    ],
+    LIBDEPS_TAGS=[
+        # Circular with rpc because it needs object_check.cpp
+        'incomplete'
+    ],
+)
+
+env.Library(
+    target=[
+        'legacy_request',
+    ],
+    source=[
+        'legacy_request.cpp',
+        'legacy_request_builder.cpp',
+    ],
+    LIBDEPS=[
+        'document_range',
+        'metadata',
+        '$BUILD_DIR/mongo/db/dbmessage',
+        '$BUILD_DIR/mongo/util/net/network',
+    ],
+)
+
+env.Library(
+    target=[
+        'command_reply',
+    ],
+    source=[
+        'command_reply.cpp',
+        'command_reply_builder.cpp',
+        'reply_builder_interface.cpp',
+    ],
+    LIBDEPS=[
+        'document_range',
+        '$BUILD_DIR/mongo/util/net/network',
+    ],
+    LIBDEPS_TAGS=[
+        # Circular with rpc because it needs object_check.cpp
+        'incomplete'
+    ],
+)
+
+env.Library(
+    target=[
+        'legacy_reply',
+    ],
+    source=[
+        'legacy_reply.cpp',
+        'legacy_reply_builder.cpp'
+    ],
+    LIBDEPS=[
+        'document_range',
+        'metadata',
+        '$BUILD_DIR/mongo/util/net/network',
+    ],
+)
+
+env.Library(
+    target=[
+        'metadata',
+    ],
+    source=[
+        'metadata.cpp',
+        'metadata/audit_metadata.cpp',
+        'metadata/config_server_metadata.cpp',
+        'metadata/server_selection_metadata.cpp',
+        'metadata/sharding_metadata.cpp',
+        'metadata/repl_set_metadata.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/bson/util/bson_extract',
+        '$BUILD_DIR/mongo/client/read_preference',
+        '$BUILD_DIR/mongo/db/repl/optime',
+        '$BUILD_DIR/mongo/util/decorable',
+    ],
+)
+
+env.CppUnitTest(
+    target=[
+        'metadata_test',
+    ],
+    source=[
+        'metadata/server_selection_metadata_test.cpp',
+        'metadata/sharding_metadata_test.cpp',
+    ],
+    LIBDEPS=[
+        'metadata',
+    ],
+)
+
+env.CppUnitTest(
+    target=[
+        'rpc_test',
+    ],
+    source=[
+        'command_reply_test.cpp',
+        'command_request_builder_test.cpp',
+        'command_request_test.cpp',
+        'legacy_request_test.cpp',
+        'object_check_test.cpp',
+        'protocol_test.cpp',
+        'reply_builder_test.cpp',
+    ],
+    LIBDEPS=[
+        'rpc',
+        '$BUILD_DIR/mongo/client/clientdriver'
+    ],
+)
+
+env.CppUnitTest(
+    target='repl_set_metadata_test',
+    source=[
+        'metadata/repl_set_metadata_test.cpp',
+    ],
+    LIBDEPS=['metadata']
+)
+
+env.CppUnitTest(
+    target='config_server_metadata_test',
+    source=[
+        'metadata/config_server_metadata_test.cpp',
+    ],
+    LIBDEPS=['metadata']
+)
+

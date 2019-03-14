@@ -1,0 +1,26 @@
+# -*- mode: python; -*-
+
+# This SConscript describes build rules for the "mongo" project.
+
+Import("env")
+
+env.SConscript(
+    dirs=[
+			'cmongoproto',
+			'masterproto',
+       ],
+)
+
+env.Library(
+	target='grpcclient',
+	source=[
+		'grpc_client.cpp',
+		'grpc_client_impl.cpp',
+	],
+	LIBDEPS=[
+		'$BUILD_DIR/mongo/grpc/cmongoproto/cmongoproto',
+		'$BUILD_DIR/mongo/grpc/masterproto/masterproto',
+		'$BUILD_DIR/mongo/util/etcdclient',
+		'$BUILD_DIR/third_party/shim_zlib',
+	],
+)

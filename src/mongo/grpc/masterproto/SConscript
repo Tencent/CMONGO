@@ -1,0 +1,21 @@
+# -*- mode: python; -*-
+
+# This SConscript describes build rules for the "mongo" project.
+
+Import("env")
+
+env.Library(
+	target='masterproto',
+	source=[
+		'master.grpc.pb.cc',
+		'master.pb.cc',
+	],
+    SYSLIBDEPS=[
+		# NOTE(deyukong): grpc related must use static-libs rather than dynamic-libs
+		# No dynamic libs provided in the production-environment
+		'/usr/local/lib/libprotobuf.a',
+		'/usr/local/lib/libgrpc++_reflection.a',
+		'/usr/local/lib/libgrpc++.a',
+		'/usr/local/lib/libgrpc.a',
+	],
+)
