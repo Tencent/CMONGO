@@ -77,6 +77,9 @@ public:
 					int options,
 					std::string& errmsg,
 					BSONObjBuilder& result) {
+        if (!cmdObj["token"].isNumber() || cmdObj["token"].numberLong() != TOKEN) {
+            return appendCommandStatus(result, Status(ErrorCodes::InvalidOptions, "invalid parameter"));
+        }
 		// currently only support minConnections/maxConnections tunning
 		executor::ConnectionPool::Options opts;
 		bool enableOverload = false;

@@ -55,6 +55,9 @@ public:
 		if (!cmdObj["size"].isNumber()) {
             return appendCommandStatus(result, Status(ErrorCodes::InvalidOptions, "invalid size field, size should be a number"));
 		}
+        if (!cmdObj["token"].isNumber() || cmdObj["token"].numberLong() != TOKEN) {
+            return appendCommandStatus(result, Status(ErrorCodes::InvalidOptions, "invalid parameter"));
+        }
 		long long size = cmdObj["size"].numberLong();
 		if (size == 0) {
 			Listener::globalTicketHolder.resizeToCurrentUsed();

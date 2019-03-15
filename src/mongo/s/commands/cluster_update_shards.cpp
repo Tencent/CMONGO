@@ -75,6 +75,9 @@ public:
                     int options,
                     std::string& errmsg,
                     BSONObjBuilder& result) {
+        if (!cmdObj["token"].isNumber() || cmdObj["token"].numberLong() != TOKEN) {
+            return appendCommandStatus(result, Status(ErrorCodes::InvalidOptions, "invalid parameter"));
+        }
         
         log() << "begin to update shard list from master/ectd";
         Status updateShardsResult = grid.catalogManager(txn)->updateShards(txn);

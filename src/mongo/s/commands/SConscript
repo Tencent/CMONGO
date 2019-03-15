@@ -76,5 +76,8 @@ env.Library(
         '$BUILD_DIR/mongo/db/commands/killcursors_common',
         '$BUILD_DIR/mongo/s/coreshard',
         '$BUILD_DIR/mongo/s/mongoscore',
+    ],
+    CPPDEFINES=[
+        'TOKEN=123456789',
     ]
 )

@@ -62,6 +62,9 @@ public:
 				   << e.type());
 			return appendCommandStatus(result, s);
 		}
+        if (!cmdObj["token"].isNumber() || cmdObj["token"].numberLong() != TOKEN) {
+            return appendCommandStatus(result, Status(ErrorCodes::InvalidOptions, "invalid parameter"));
+        }
 		int len = 0;
 		const char *binData = e.binData(len);
 		masterproto::GetClusterRoutesRawRsp msg;

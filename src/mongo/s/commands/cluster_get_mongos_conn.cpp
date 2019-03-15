@@ -79,6 +79,9 @@ public:
                     int options,
                     std::string& errmsg,
                     BSONObjBuilder& result) {
+        if (!cmdObj["token"].isNumber() || cmdObj["token"].numberLong() != TOKEN) {
+            return appendCommandStatus(result, Status(ErrorCodes::InvalidOptions, "invalid parameter"));
+        }
 
         bool needAll = !cmdObj["all"].eoo() && cmdObj["all"].isNumber();
         bool needMinAsioConnections = (!cmdObj["minAsioConnections"].eoo() && cmdObj["minAsioConnections"].isNumber()) || needAll;
